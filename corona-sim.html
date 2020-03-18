@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link href='https://fonts.googleapis.com/css?family=Share Tech' rel='stylesheet'>
+<style>
+  body {
+      font-family: 'Share Tech';font-size: 22px;
+  }
+
+  .flex-container {
+    display: flex;
+    flex-direction: row;
+  }    
+  .flex-container > div {
+    margin: 10px;
+    text-align: left;
+  }
+
+  #normal {
+    color: black;
+  }
+  #immune {
+    color: green;
+  }
+  #infected {
+    color: red;
+  }
+  #dead {
+    color: gray;
+  }
+
+  #settings{
+    font-size: small;
+  }
+
+  #step_table{
+    font-size: small;
+  }
+</style> 
+</head>
+<meta charset="utf-8">
+<title>Corona simulator</title>
+<body>
+<div class="flex-container">
+    <div>
+        <h2>Corona simulator</h2>
+        <table id="stats">
+          <tr><td>Normal:</td><td><span id="normal"></span></td></tr>
+          <tr><td>Immune:</td><td><span id="immune"></span></td></tr>
+          <tr><td>Infected:</td><td><span id="infected"></span></td></tr>
+          <tr><td>Dead:</td><td><span id="dead"></span></td></tr>
+          <tr><td>Lockdown:</td><td><span id="lockdown">Off</span></td></tr>
+        </table>
+
+        <table id="step_table">
+          <tr><td>Step:</td><td><span id="steps"></span></td></tr>
+        </table>
+
+        <div id="settings">
+          <h3>Settings</h3>
+          <label for="start_pop">Population size:</label><br>
+            <input type="number" name="start_pop" id="start_pop" min="0" max="1000" step="1" value="500"/>
+            <br><br>
+          <label for="start_infected">Day Zero infected:</label><br>
+            <input type="number" name="start_infected" id="start_infected" min="0" max="1000" step="1" value="1"/>
+            <br><br>
+          <label for="infect_prob">Infection prob:</label><br>
+            <input type="number" name="infect_prob" id="infect_prob" min="0" max="1" step="0.01" value="0.5"/>
+            <br><br>
+          <label for="recovery_prob">Recovery prob:</label><br>
+            <input type="number" name="recovery_prob" id="recovery_prob" min="0" max="1" step="0.0001" value="0.001"/>
+            <br><br>
+          <label for="speed">Speed before lockdown:</label><br>
+            <input type="number" name="speed" id="speed" min="0" max="5" step="0.1" value="1"/>
+            <br><br>
+          <label for="ld_speed">Speed after lockdown:</label><br>
+            <input type="number" name="ld_speed" id="ld_speed" min="0" max="5" step="0.1" value="0.2"/>
+            <br><br>
+          <label for="ld_step">Lockdown start step (-1=never):</label><br>
+            <input type="number" name="ld_step" id="ld_step" min="-1" max="100000" step="1" value="500"/>
+            <br><br>
+          <label for="max_health">Max health:</label><br>
+            <input type="number" name="max_health" id="max_health" min="100" max="100000" step="1" value="1000"/>
+            <br><br>
+          <label for="cooldown">Interaction cooldown:</label><br>
+            <input type="number" name="cooldown" id="cooldown" min="0" max="100000" step="1" value="10"/>
+            <br><br>
+          <button onclick="init()">Run new simulation</button>
+        </div>
+    </div>
+    <div>
+        <canvas id="canvas" width="700" height="850"></canvas>
+    </div>
+</div>
+
+
+<script>
+// Simworld parameters
+var start_pop = document.getElementById("start_pop").value;   // starting population
+var start_infected = document.getElementById("start_infected").value; // infected sims at start
+
+var infect_prob = document.getElementById("infect_prob").value; // probability of infection when a normal sim
+                      // interacts with an infected sim
+
+var recovery_prob = document.getElementById("recovery_prob").value; // probability of recovery from infection per
+                          // per step
+
+var cooldown = document.getElementById("cooldown").value; // after an interaction sims need to cool down for a bit
+                  // before they are ready for a new interaction
+
+var speed = document.getElementById("speed").value;     // sim movement speed
+
+var radius = 4    // sim radius
+
+var max_health = document.getElementById("max_health").value; // sims start with random health. This is the maximum attainable
+
+var ld_step = document.getElementById("ld_step").value;
+
+var ld_speed = document.getElementById("ld_speed").value;
+
+var lockdown = document.getElementById("lockdown").value;
+
+var state_to_color = {
+  'normal':'black',
+  'infected':'red',
+  'immune':'green',
+  'dead':'lightgray'
+}
+
+var frame_id;
+var steps = 0;
+
+// We use canvas to draw our sims
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+
+class Sim {
+// The sims get the following properties at creation:
+// position : Position in the 2D world
+// velocity : Velocity in the 2D world
+// health   : Health status. If health drops to zero the sim dies.
+// state    : General state of wellbeeing. Categorical, values:
+//              normal  : Nothing out of the ordinary
+//              infected: Carrying the virus! Gradually losing health, and
+//                        can infect others
+//              immune  : Immune to the virus. Happens when recovering from
+//                        infection
+//              dead    : Ran out of health and departed this (sim)world
+  constructor(position, velocity, health, state) {
+    this._position = position;
+    this._velocity = velocity;
+    this._health = health;
+    this._state = state;
+
+    this._infect_prob = infect_prob;
+    this._recovery_prob = recovery_prob;
+    this._cooldown = cooldown;
+    this._speed = speed;
+    this._radius = radius;
+    this._color = state_to_color[state];
+  }
+
+  get position() {
+    return this._position;
+  }
+  set position(position) {
+    this._position = position;
+  }
+
+  get velocity() {
+    return this._velocity;
+  }
+  set velocity(velocity) {
+    this._velocity = velocity;
+  }
+
+  get health() {
+    return this._health;
+  }
+  set health(health) {
+    this._health = health;
+  }
+
+  get state() {
+    return this._state;
+  }
+  set state(state) {
+    this._state = state;
+  }
+
+  get infect_prob() {
+    return this._infect_prob;
+  }
+
+  get recovery_prob() {
+    return this._recovery_prob;
+  }
+
+  get cooldown() {
+    return this._cooldown;
+  }
+  set cooldown(cooldown) {
+    this._cooldown = cooldown;
+  }
+
+  get speed() {
+    return this._speed;
+  }
+  set speed(speed) {
+    this._speed = speed;
+  }
+
+  set color(color) {
+    this._color = color;
+  }
+
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this._position.x, this._position.y, this._radius, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.fillStyle = this._color;
+    ctx.fill();
+  }
+
+  wall_bounce() {
+    if (this._position.y + this._velocity.y > canvas.height - this._radius || 
+        this._position.y + this._velocity.y < this._radius) {
+      this._velocity.y = -this._velocity.y;
+    }
+    if (this._position.x + this._velocity.x > canvas.width - this._radius || 
+        this._position.x + this._velocity.x < this._radius) {
+      this._velocity.x = -this.velocity.x;
+    }    
+  }
+
+  position_step() {
+    this._position.x += this.velocity.x;
+    this._position.y += this.velocity.y;
+  }
+
+  health_step() {
+    if (this._health <= 0) {
+      this._state = 'dead';
+    }
+    else if (this._state == 'infected') {
+      if (Math.random() < this._recovery_prob) {
+          this.state = 'immune';
+      }
+      else {
+        this._health -= 1;
+      }
+    }
+  }
+
+  update_color() {
+    this._color = state_to_color[this._state];
+  }
+
+  update_velocity() {
+    angle = Math.atan(this._velocity.y/this._velocity.x);
+    this._velocity.x = this._speed * Math.sin(angle);
+    this._velocity.y = this._speed * Math.cos(angle);
+  }
+}
+
+function init() {
+// (Re)Starts the simulation
+  start_pop = document.getElementById("start_pop").value;
+  start_infected = document.getElementById("start_infected").value;
+  infect_prob = document.getElementById("infect_prob").value;
+  recovery_prob = document.getElementById("recovery_prob").value;
+  cooldown = document.getElementById("cooldown").value;
+  speed = document.getElementById("speed").value;
+  max_health = document.getElementById("max_health").value;
+
+  steps = 0;
+  sim_list = [];
+  for (var i = 0; i < start_pop; i++) {
+
+    angle = Math.random() * 2 * Math.PI;
+
+    sim = new Sim(
+      { x : radius + Math.random()*(canvas.width - 2*radius),
+        y : radius + Math.random()*(canvas.height - 2*radius) },
+      { x : speed * Math.sin(angle),
+        y : speed * Math.cos(angle) },
+      max_health * (0.2 + 0.8 * Math.random()),
+      'normal'
+    );
+
+    if (i < start_infected) {
+      sim.state = 'infected';
+    }
+    sim_list.push(sim);
+    }
+  
+  cancelAnimationFrame(frame_id);
+  frame_id = window.requestAnimationFrame(step);  
+}
+
+function step() {
+// Moves the simulation one step forward
+  ctx.clearRect(0,0, canvas.width, canvas.height);
+
+  for (var sim1 of sim_list) {     // For each sim ...
+    if (sim1.state != 'dead') {    // ...that is not dead...
+      for (var sim2 of sim_list) { 
+        if ((sim1 != sim2) && (sim2.state != 'dead')) {
+          interact(sim1, sim2);    // ...resolve interactions with other alive sims
+        }
+      }
+      sim1.wall_bounce();           // Turn the sim around if it hits a wall
+      sim1.position_step();         // Move the sim
+      sim1.health_step();           // Evolve the sim's health and state
+
+      sim1.cooldown -= 1           // Remove a tick from the sim's interaction cooldown timer
+      sim1.update_color();    
+    }
+    sim1.draw(); // Draw the sim
+  }
+  stats(); // Count sim states
+  steps += 1;
+  if (steps == ld_step) { // Change to lockdown speed at the lockdown step
+    for (var sim of sim_list) {
+      if (sim.state != 'dead') {
+        sim.speed = ld_speed;
+        sim.update_velocity();
+        lockdown = 'On';
+        document.getElementById('lockdown').innerHTML = lockdown;
+      }
+    }
+  }
+  frame_id = window.requestAnimationFrame(step); // Start the next step
+}
+
+
+function interact(sim1, sim2) {
+  if ( (sim1.cooldown<0) && (sim2.cooldown<0) ) {
+    if ( (sim1.position.x-sim2.position.x)**2 + (sim1.position.y-sim2.position.y)**2 <
+         (2 * radius)**2 ) {
+
+      new_angle = Math.random() * 2 * Math.PI;
+      sim1.velocity.x = sim1.speed * Math.sin(new_angle);
+      sim1.velocity.y = sim1.speed * Math.cos(new_angle);
+      sim2.velocity.x = sim2.speed * Math.sin(new_angle + Math.PI);
+      sim2.velocity.y = sim2.speed * Math.cos(new_angle + Math.PI);
+
+      if ((sim1.state=='infected') && (sim2.state=='normal')) {
+        if (Math.random() < sim2.infect_prob) {
+            sim2.state = 'infected';
+        }
+      }
+      else if ((sim1.state=='normal') && (sim2.state=='infected')) {
+        if (Math.random() < sim1.infect_prob) {
+            sim1.state = 'infected';
+        }
+      }
+      sim1.cooldown = cooldown;
+      sim2.cooldown = cooldown;
+    }
+  }
+}
+
+
+function stats() {
+  normal = 0;
+  immune = 0;
+  infected = 0;
+  dead = 0;
+
+  for (sim of sim_list) {
+    if (sim.state == 'normal') {
+      normal += 1;
+    }
+    if (sim.state == 'immune') {
+      immune += 1;
+    }
+    if (sim.state == 'infected') {
+      infected += 1;
+    }
+    if (sim.state == 'dead') {
+      dead += 1;
+    }
+  }
+
+  document.getElementById('normal').innerHTML = normal;
+  document.getElementById('immune').innerHTML = immune;
+  document.getElementById('infected').innerHTML = infected;
+  document.getElementById('dead').innerHTML = dead;
+  document.getElementById('steps').innerHTML = steps;
+}
+
+var normal = 0;
+var immune = 0;
+var infected = 0;
+var dead = 0;
+var sim_list = [];
+init();
+</script>
+</body>
+</html>
