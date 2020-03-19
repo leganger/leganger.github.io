@@ -2,7 +2,7 @@
 <html>
 <head>
 <link href='https://fonts.googleapis.com/css?family=Share Tech' rel='stylesheet'>
-<style>
+<script src="https://d3js.org/d3.v5.min.js"></script><style>
   body {
       font-family: 'Share Tech';font-size: 22px;
   }
@@ -14,6 +14,7 @@
   .flex-container > div {
     margin: 10px;
     text-align: left;
+    flex-direction: column;
   }
 
   #normal {
@@ -24,6 +25,9 @@
   }
   #infected {
     color: red;
+  }
+  #care {
+    color: lightblue;
   }
   #dead {
     color: gray;
@@ -36,61 +40,81 @@
   #step_table{
     font-size: small;
   }
+
+  #canvas{
+    background-image: url('world_map_bw_crop.jpg');
+  }
+
 </style> 
 </head>
 <meta charset="utf-8">
 <title>Corona simulator</title>
 <body>
 <div class="flex-container">
-    <div>
-        <h2>Corona simulator</h2>
-        <table id="stats">
-          <tr><td>Normal:</td><td><span id="normal"></span></td></tr>
-          <tr><td>Immune:</td><td><span id="immune"></span></td></tr>
-          <tr><td>Infected:</td><td><span id="infected"></span></td></tr>
-          <tr><td>Dead:</td><td><span id="dead"></span></td></tr>
-          <tr><td>Lockdown:</td><td><span id="lockdown">Off</span></td></tr>
-        </table>
+  <div>
+      <h2>Corona simulator</h2>
+      <table id="stats">
+        <tr><td>Normal:</td><td><span id="normal"></span></td></tr>
+        <tr><td>Immune:</td><td><span id="immune"></span></td></tr>
+        <tr><td>Infected:</td><td><span id="infected"></span></td></tr>
+        <tr><td>Hospital:</td><td><span id="care"></span></td></tr>
+        <tr><td>Dead:</td><td><span id="dead"></span></td></tr>
+        <tr><td>Virus known:</td><td><span id="disc"></span></td></tr>
+        <tr><td>Lockdown:</td><td><span id="lockdown"></span></td></tr>
+      </table>
 
-        <table id="step_table">
-          <tr><td>Step:</td><td><span id="steps"></span></td></tr>
-        </table>
+      <table id="step_table">
+        <tr><td>Step:</td><td><span id="steps"></span></td></tr>
+      </table>
 
-        <div id="settings">
-          <h3>Settings</h3>
-          <label for="start_pop">Population size:</label><br>
-            <input type="number" name="start_pop" id="start_pop" min="0" max="1000" step="1" value="500"/>
-            <br><br>
-          <label for="start_infected">Day Zero infected:</label><br>
-            <input type="number" name="start_infected" id="start_infected" min="0" max="1000" step="1" value="1"/>
-            <br><br>
-          <label for="infect_prob">Infection prob:</label><br>
-            <input type="number" name="infect_prob" id="infect_prob" min="0" max="1" step="0.01" value="0.5"/>
-            <br><br>
-          <label for="recovery_prob">Recovery prob:</label><br>
-            <input type="number" name="recovery_prob" id="recovery_prob" min="0" max="1" step="0.0001" value="0.001"/>
-            <br><br>
-          <label for="speed">Speed before lockdown:</label><br>
-            <input type="number" name="speed" id="speed" min="0" max="5" step="0.1" value="1"/>
-            <br><br>
-          <label for="ld_speed">Speed after lockdown:</label><br>
-            <input type="number" name="ld_speed" id="ld_speed" min="0" max="5" step="0.1" value="0.2"/>
-            <br><br>
-          <label for="ld_step">Lockdown start step (-1=never):</label><br>
-            <input type="number" name="ld_step" id="ld_step" min="-1" max="100000" step="1" value="500"/>
-            <br><br>
-          <label for="max_health">Max health:</label><br>
-            <input type="number" name="max_health" id="max_health" min="100" max="100000" step="1" value="1000"/>
-            <br><br>
-          <label for="cooldown">Interaction cooldown:</label><br>
-            <input type="number" name="cooldown" id="cooldown" min="0" max="100000" step="1" value="10"/>
-            <br><br>
-          <button onclick="init()">Run new simulation</button>
-        </div>
-    </div>
-    <div>
-        <canvas id="canvas" width="700" height="850"></canvas>
-    </div>
+      <div id="settings">
+        <h3>Settings</h3>
+        <label for="start_pop">Population size:</label><br>
+          <input type="number" name="start_pop" id="start_pop" min="0" max="2000" step="1" value="500"/>
+          <br><br>
+        <label for="start_infected">Day Zero infected:</label><br>
+          <input type="number" name="start_infected" id="start_infected" min="0" max="2000" step="1" value="1"/>
+          <br><br>
+        <label for="care_cap">Intensive care capacity:</label><br>
+          <input type="number" name="care_cap" id="care_cap" min="0" max="2000" step="1" value="10"/>
+          <br><br>          
+        <label for="disc_step">Virus discovery step (-1=never):</label><br>
+          <input type="number" name="disc_step" id="disc_step" min="-1" max="100000" step="1" value="200"/>
+          <br><br>
+        <label for="ld_step">Lockdown start step (-1=never):</label><br>
+          <input type="number" name="ld_step" id="ld_step" min="-1" max="100000" step="1" value="1000"/>
+          <br><br>
+        <label for="infect_prob">Infection prob:</label><br>
+          <input type="number" name="infect_prob" id="infect_prob" min="0" max="1" step="0.01" value="0.5"/>
+          <br><br>
+        <label for="test_prob">Test prob:</label><br>
+          <input type="number" name="test_prob" id="test_prob" min="0" max="1" step="0.0001" value="0.05"/>
+          <br><br>          
+        <label for="recovery_prob">Recovery prob:</label><br>
+          <input type="number" name="recovery_prob" id="recovery_prob" min="0" max="1" step="0.0001" value="0.0003"/>
+          <br><br>
+        <label for="care_recovery_prob">Care recovery prob:</label><br>
+          <input type="number" name="care_recovery_prob" id="care_recovery_prob" min="0" max="1" step="0.0001" value="0.003"/>
+          <br><br>          
+        <label for="speed">Speed before lockdown:</label><br>
+          <input type="number" name="speed" id="speed" min="0" max="5" step="0.1" value="1.5"/>
+          <br><br>
+        <label for="ld_speed">Speed after lockdown:</label><br>
+          <input type="number" name="ld_speed" id="ld_speed" min="0" max="5" step="0.1" value="0.3"/>
+          <br><br>
+        <label for="max_health">Max health:</label><br>
+          <input type="number" name="max_health" id="max_health" min="100" max="100000" step="1" value="2000"/>
+          <br><br>
+        <label for="cooldown">Interaction cooldown:</label><br>
+          <input type="number" name="cooldown" id="cooldown" min="0" max="100000" step="1" value="10"/>
+          <br><br>
+        <button onclick="init()">Run new simulation</button>
+      </div>
+  </div>
+  <div>
+    <div id="stats_history"></div>
+    <div><canvas id="canvas" width="1200" height="800" ></canvas></div>
+  </div>
 </div>
 
 
@@ -118,22 +142,40 @@ var ld_step = document.getElementById("ld_step").value;
 
 var ld_speed = document.getElementById("ld_speed").value;
 
-var lockdown = document.getElementById("lockdown").value;
+var care_cap = document.getElementById("care_cap").value;
+var disc_step = document.getElementById("disc_step").value;
+var test_prob = document.getElementById("test_prob").value;
+var care_recovery_prob = document.getElementById("care_recovery_prob").value;
+
+var lockdown = 'off';
+
+var care = 0;
 
 var state_to_color = {
   'normal':'black',
   'infected':'red',
   'immune':'green',
-  'dead':'lightgray'
+  'dead':'lightgray',
+  'care':'lightblue'
 }
 
 var frame_id;
 var steps = 0;
+var data = [];
+var sim_list = [];
+var step_list = [];
+var infected_list = [];
+var stat_max = {
+  //'normal' : start_pop,
+  'infected':start_infected,
+  'care' : 0,
+  'immune':0,
+  'dead':0
+  };
 
 // We use canvas to draw our sims
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
-
 
 class Sim {
 // The sims get the following properties at creation:
@@ -155,10 +197,13 @@ class Sim {
 
     this._infect_prob = infect_prob;
     this._recovery_prob = recovery_prob;
+    this._care_recovery_prob = care_recovery_prob;
+    this._test_prob = test_prob;
     this._cooldown = cooldown;
     this._speed = speed;
     this._radius = radius;
     this._color = state_to_color[state];
+    this._test = false;
   }
 
   get position() {
@@ -215,6 +260,13 @@ class Sim {
     this._color = color;
   }
 
+  get test() {
+    return this._test;
+  }
+  set test(test) {
+    this._test = test;
+  }
+
   draw() {
     ctx.beginPath();
     ctx.arc(this._position.x, this._position.y, this._radius, 0, Math.PI * 2, true);
@@ -240,15 +292,43 @@ class Sim {
   }
 
   health_step() {
-    if (this._health <= 0) {
+    if (this._health <= 0) { // When health drops to 0 you die...
+      if (this._state == 'care') {
+        care -= 1; // ...and free up any intensive care beds!
+      }
       this._state = 'dead';
     }
-    else if (this._state == 'infected') {
+    else if (this._state == 'infected') { // If infected...
       if (Math.random() < this._recovery_prob) {
-          this.state = 'immune';
+        this.state = 'immune'; // ...you may recover on your own...
+      }
+      else if (
+        (care < care_cap) && 
+        (this._test == true) &&
+        (this._health < 0.4 * max_health)
+        ) {
+        this.state = 'care'; // ... if not you may get intensive care
+        care += 1;           // if you have tested positive and have low
+      }                      // health.
+      // If the sim is infected, not discovered, and testing is active;
+      // check if sim tests positive and becomes eligible for care;
+      else if (
+        (this._test == false) && 
+        (steps >= disc_step)
+      ) {
+        if (Math.random() < this._test_prob) {
+          this._test = true;
+        }
+      this._health -= 1; // You lose health while infected
+      }
+    }
+    else if (this._state == 'care') {
+      if (Math.random() < this._care_recovery_prob) {
+        this.state = 'immune'; // Intensive care gives you better chance
+        care -= 1;             // of recovery.
       }
       else {
-        this._health -= 1;
+        this._health -= 1; // You lose health while infected and in care
       }
     }
   }
@@ -273,9 +353,21 @@ function init() {
   cooldown = document.getElementById("cooldown").value;
   speed = document.getElementById("speed").value;
   max_health = document.getElementById("max_health").value;
+  ld_step = document.getElementById("ld_step").value;
+  ld_speed = document.getElementById("ld_speed").value;
+
+  stat_max = {//'normal' : start_pop,
+              'infected':start_infected,
+              'care':0,
+              'immune':0,
+              'dead':0
+            };
+  lockdown = 'off';
 
   steps = 0;
+  data = [];
   sim_list = [];
+  
   for (var i = 0; i < start_pop; i++) {
 
     angle = Math.random() * 2 * Math.PI;
@@ -320,20 +412,20 @@ function step() {
     sim1.draw(); // Draw the sim
   }
   stats(); // Count sim states
+  update_chart(); // Draw the stats chart
   steps += 1;
   if (steps == ld_step) { // Change to lockdown speed at the lockdown step
     for (var sim of sim_list) {
       if (sim.state != 'dead') {
         sim.speed = ld_speed;
         sim.update_velocity();
-        lockdown = 'On';
+        lockdown = 'on';
         document.getElementById('lockdown').innerHTML = lockdown;
       }
     }
   }
   frame_id = window.requestAnimationFrame(step); // Start the next step
 }
-
 
 function interact(sim1, sim2) {
   if ( (sim1.cooldown<0) && (sim2.cooldown<0) ) {
@@ -362,40 +454,157 @@ function interact(sim1, sim2) {
   }
 }
 
-
-function stats() {
-  normal = 0;
-  immune = 0;
-  infected = 0;
-  dead = 0;
-
+function state_count(state) {
+  var count = 0;
   for (sim of sim_list) {
-    if (sim.state == 'normal') {
-      normal += 1;
-    }
-    if (sim.state == 'immune') {
-      immune += 1;
-    }
-    if (sim.state == 'infected') {
-      infected += 1;
-    }
-    if (sim.state == 'dead') {
-      dead += 1;
+    if (sim.state == state) {
+      count += 1;
     }
   }
+  return count;
+}
+
+function last(list) {
+  return list[list.length -1];
+}
+
+function stats() {
+  normal = state_count('normal');
+  immune = state_count('immune');
+  infected = state_count('infected');
+  care = state_count('care');
+  dead = state_count('dead');
+
+  //if (normal > stat_max.normal) {
+  //  stat_max.normal = normal;
+  //}
+  if (immune > stat_max.immune) {
+    stat_max.immune = immune;
+  }
+  if (infected > stat_max.infected) {
+    stat_max.infected = infected;
+  }
+  if (dead > stat_max.dead) {
+    stat_max.dead = dead;
+  }
+
+  data.push({'normal' : normal,
+             'immune' : immune,
+             'infected' : infected,
+             'care' : care,
+             'dead' : dead,
+             'step' : steps});
+
+  step_list.push(steps);
+  infected_list.push(infected);
 
   document.getElementById('normal').innerHTML = normal;
   document.getElementById('immune').innerHTML = immune;
   document.getElementById('infected').innerHTML = infected;
+  document.getElementById('care').innerHTML = care;
   document.getElementById('dead').innerHTML = dead;
+  document.getElementById('disc').innerHTML = steps > disc_step;
+  document.getElementById('lockdown').innerHTML = lockdown;
   document.getElementById('steps').innerHTML = steps;
 }
 
-var normal = 0;
-var immune = 0;
-var infected = 0;
-var dead = 0;
-var sim_list = [];
+
+// Stats history chart
+const width = 700;
+const height = 30;
+const margin = 5;
+const padding = 5;
+const adj = 10;
+// we are appending SVG first
+const svg = d3.select("#stats_history").append("svg")
+    .attr("viewBox", "-"
+          + adj + " -"
+          + adj + " "
+          + (width + adj *3) + " "
+          + (height + adj*3))
+    .style("padding", padding)
+    .style("margin", margin)
+    .classed("svg-content", true);
+
+const xScale = d3.scaleLinear().range([0,width]);
+const yScale = d3.scaleLinear().rangeRound([height, 0]);
+
+function update_chart() {
+
+  xScale.domain([0,steps]);
+  yScale.domain([0, d3.max(Object.values(stat_max))]);
+
+  //  const xaxis = d3.axisBottom().tickSize(0).tickValues([]).scale(xScale);
+  //  const yaxis = d3.axisLeft().tickSize(0).tickValues([]).scale(yScale);    
+  //svg.select(".xaxis") // change the x axis
+  //  .call(xaxis);
+  //svg.select(".yaxis") // change the y axis
+  //  .call(yaxis);
+
+  immune_line = d3.line()
+    .defined(d => !isNaN(d.immune))
+    .x(d => xScale(d.step))
+    .y(d => yScale(d.immune));
+
+  infected_line = d3.line()
+    .defined(d => !isNaN(d.infected))
+    .x(d => xScale(d.step))
+    .y(d => yScale(d.infected));
+
+  care_line = d3.line()
+    .defined(d => !isNaN(d.care))
+    .x(d => xScale(d.step))
+    .y(d => yScale(d.care));
+
+  dead_line = d3.line()
+    .defined(d => !isNaN(d.dead))
+    .x(d => xScale(d.step))
+    .y(d => yScale(d.dead));
+
+  svg.selectAll("*").remove();
+
+  svg.append("path")
+    .attr("class", "immune_line")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", "green")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("d", immune_line);
+
+  svg.append("path")
+    .attr("class", "infected_line")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", "red")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("d", infected_line);
+
+  svg.append("path")
+    .attr("class", "care_line")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", "lightblue")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("d", care_line);
+
+  svg.append("path")
+    .attr("class", "dead_line")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", "gray")
+    .attr("stroke-width", 1.5)
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("d", dead_line);
+}
+
+
 init();
 </script>
 </body>
