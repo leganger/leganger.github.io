@@ -70,7 +70,7 @@
       <div id="settings">
         <h3>Settings</h3>
         <label for="start_pop">Population size:</label><br>
-          <input type="number" name="start_pop" id="start_pop" min="0" max="2000" step="1" value="500"/>
+          <input type="number" name="start_pop" id="start_pop" min="0" max="2000" step="1" value="1000"/>
           <br><br>
         <label for="start_infected">Day Zero infected:</label><br>
           <input type="number" name="start_infected" id="start_infected" min="0" max="2000" step="1" value="1"/>
@@ -79,31 +79,31 @@
           <input type="number" name="care_cap" id="care_cap" min="0" max="2000" step="1" value="10"/>
           <br><br>          
         <label for="disc_step">Virus discovery step (-1=never):</label><br>
-          <input type="number" name="disc_step" id="disc_step" min="-1" max="100000" step="1" value="200"/>
+          <input type="number" name="disc_step" id="disc_step" min="-1" max="100000" step="1" value="300"/>
           <br><br>
         <label for="ld_step">Lockdown start step (-1=never):</label><br>
-          <input type="number" name="ld_step" id="ld_step" min="-1" max="100000" step="1" value="1000"/>
+          <input type="number" name="ld_step" id="ld_step" min="-1" max="100000" step="1" value="800"/>
           <br><br>
         <label for="infect_prob">Infection prob:</label><br>
-          <input type="number" name="infect_prob" id="infect_prob" min="0" max="1" step="0.01" value="0.5"/>
+          <input type="number" name="infect_prob" id="infect_prob" min="0" max="1" step="0.01" value="0.75"/>
           <br><br>
         <label for="test_prob">Test prob:</label><br>
           <input type="number" name="test_prob" id="test_prob" min="0" max="1" step="0.0001" value="0.05"/>
           <br><br>          
         <label for="recovery_prob">Recovery prob:</label><br>
-          <input type="number" name="recovery_prob" id="recovery_prob" min="0" max="1" step="0.0001" value="0.0003"/>
+          <input type="number" name="recovery_prob" id="recovery_prob" min="0" max="1" step="0.0001" value="0.003"/>
           <br><br>
         <label for="care_recovery_prob">Care recovery prob:</label><br>
-          <input type="number" name="care_recovery_prob" id="care_recovery_prob" min="0" max="1" step="0.0001" value="0.003"/>
+          <input type="number" name="care_recovery_prob" id="care_recovery_prob" min="0" max="1" step="0.005" value="0.008"/>
           <br><br>          
         <label for="speed">Speed before lockdown:</label><br>
-          <input type="number" name="speed" id="speed" min="0" max="5" step="0.1" value="1.5"/>
+          <input type="number" name="speed" id="speed" min="0" max="5" step="0.1" value="1.0"/>
           <br><br>
         <label for="ld_speed">Speed after lockdown:</label><br>
-          <input type="number" name="ld_speed" id="ld_speed" min="0" max="5" step="0.1" value="0.3"/>
+          <input type="number" name="ld_speed" id="ld_speed" min="0" max="5" step="0.1" value="0.5"/>
           <br><br>
         <label for="max_health">Max health:</label><br>
-          <input type="number" name="max_health" id="max_health" min="100" max="100000" step="1" value="1500"/>
+          <input type="number" name="max_health" id="max_health" min="100" max="100000" step="1" value="500"/>
           <br><br>
         <label for="cooldown">Interaction cooldown:</label><br>
           <input type="number" name="cooldown" id="cooldown" min="0" max="100000" step="1" value="10"/>
@@ -305,7 +305,7 @@ class Sim {
       else if (
         (care < care_cap) && 
         (this._test == true) &&
-        (this._health < 0.4 * max_health)
+        (this._health < 0.5 * max_health)
         ) {
         this.state = 'care'; // ... if not you may get intensive care
         care += 1;           // if you have tested positive and have low
