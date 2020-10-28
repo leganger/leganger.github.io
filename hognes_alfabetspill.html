@@ -1,0 +1,132 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>
+            HOGNES ALFABETSPILL
+        </title>
+    </head>
+    <style>
+        .center-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+            }
+    </style>
+
+<body>
+
+    <audio id="A" src="audio/A.wav" preload="auto"></audio>
+    <audio id="B" src="audio/B.wav" preload="auto"></audio>
+    <audio id="C" src="audio/C.wav" preload="auto"></audio>
+    <audio id="D" src="audio/D.wav" preload="auto"></audio>
+    <audio id="E" src="audio/E.wav" preload="auto"></audio>
+    <audio id="F" src="audio/F.wav" preload="auto"></audio>
+    <audio id="G" src="audio/G.wav" preload="auto"></audio>
+    <audio id="H" src="audio/H.wav" preload="auto"></audio>
+    <audio id="I" src="audio/I.wav" preload="auto"></audio>
+    <audio id="J" src="audio/J.wav" preload="auto"></audio>
+    <audio id="K" src="audio/K.wav" preload="auto"></audio>
+    <audio id="L" src="audio/L.wav" preload="auto"></audio>
+    <audio id="M" src="audio/M.wav" preload="auto"></audio>
+    <audio id="N" src="audio/N.wav" preload="auto"></audio>
+    <audio id="O" src="audio/O.wav" preload="auto"></audio>
+    <audio id="P" src="audio/P.wav" preload="auto"></audio>
+    <audio id="Q" src="audio/Q.wav" preload="auto"></audio>
+    <audio id="R" src="audio/R.wav" preload="auto"></audio>
+    <audio id="S" src="audio/S.wav" preload="auto"></audio>
+    <audio id="T" src="audio/T.wav" preload="auto"></audio>
+    <audio id="U" src="audio/U.wav" preload="auto"></audio>
+    <audio id="V" src="audio/V.wav" preload="auto"></audio>
+    <audio id="W" src="audio/W.wav" preload="auto"></audio>
+    <audio id="X" src="audio/X.wav" preload="auto"></audio>
+    <audio id="Y" src="audio/Y.wav" preload="auto"></audio>
+    <audio id="Z" src="audio/Z.wav" preload="auto"></audio>
+    <audio id="Æ" src="audio/Æ.wav" preload="auto"></audio>
+    <audio id="Ø" src="audio/Ø.wav" preload="auto"></audio>
+    <audio id="Å" src="audio/Å.wav" preload="auto"></audio>
+    <audio id="1" src="audio/1.wav" preload="auto"></audio>
+    <audio id="2" src="audio/2.wav" preload="auto"></audio>
+    <audio id="3" src="audio/3.wav" preload="auto"></audio>
+    <audio id="4" src="audio/4.wav" preload="auto"></audio>
+    <audio id="5" src="audio/5.wav" preload="auto"></audio>
+    <audio id="6" src="audio/6.wav" preload="auto"></audio>
+    <audio id="7" src="audio/7.wav" preload="auto"></audio>
+    <audio id="8" src="audio/8.wav" preload="auto"></audio>
+    <audio id="9" src="audio/9.wav" preload="auto"></audio>
+    <audio id="0" src="audio/0.wav" preload="auto"></audio>
+
+<div class="center-screen">
+    <span id="text" style="font-size:90vh; font-family:helvetica;">HEI</span>
+</div>
+
+<script type="text/javascript">
+
+const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ1234567890";
+const num_colors = 100;
+
+window.addEventListener('keydown',this.update_key,false);
+
+function update_key(e) {
+    
+    var key = e.key.toUpperCase();
+
+    var sample = Math.floor(Math.random() * num_colors);
+
+    if (chars.includes(key)) {
+        document.getElementById('text').innerHTML = key;
+        document.getElementById("text").style.color = rainbow(num_colors, sample);
+        document.getElementById("text").style.font = "90vh helvetica";
+        play_multi_sound(key);
+    }
+}
+
+
+function rainbow(numOfSteps, step) {
+    // This function generates vibrant, "evenly spaced" colours (i.e. no clustering). This is ideal for creating easily distinguishable vibrant markers in Google Maps and other apps.
+    // Adam Cole, 2011-Sept-14
+    // HSV to RBG adapted from: http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript
+    var r, g, b;
+    var h = step / numOfSteps;
+    var i = ~~(h * 6);
+    var f = h * 6 - i;
+    var q = 1 - f;
+    switch(i % 6){
+        case 0: r = 1; g = f; b = 0; break;
+        case 1: r = q; g = 1; b = 0; break;
+        case 2: r = 0; g = 1; b = f; break;
+        case 3: r = 0; g = q; b = 1; break;
+        case 4: r = f; g = 0; b = 1; break;
+        case 5: r = 1; g = 0; b = q; break;
+    }
+    var c = "#" + ("00" + (~ ~(r * 255)).toString(16)).slice(-2) + ("00" + (~ ~(g * 255)).toString(16)).slice(-2) + ("00" + (~ ~(b * 255)).toString(16)).slice(-2);
+    return (c);
+}
+
+
+var channel_max = 10;										// number of channels
+	audiochannels = new Array();
+	for (a=0;a<channel_max;a++) {									// prepare the channels
+		audiochannels[a] = new Array();
+		audiochannels[a]['channel'] = new Audio();						// create a new audio object
+		audiochannels[a]['finished'] = -1;							// expected end time for this channel
+	}
+	function play_multi_sound(s) {
+		for (a=0;a<audiochannels.length;a++) {
+			thistime = new Date();
+			if (audiochannels[a]['finished'] < thistime.getTime()) {			// is this channel finished?
+				audiochannels[a]['finished'] = thistime.getTime() + document.getElementById(s).duration*1000;
+				audiochannels[a]['channel'].src = document.getElementById(s).src;
+				audiochannels[a]['channel'].load();
+				audiochannels[a]['channel'].play();
+				break;
+			}
+		}
+	}
+
+</script>
+
+</body>
+</html>
