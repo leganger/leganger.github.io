@@ -132,7 +132,7 @@ var channel_max = 10;                                        // number of channe
                 audiochannels[a]['channel'].src = document.getElementById(s).src;
                 audiochannels[a]['channel'].load();
                 audiochannels[a]['channel'].play();
-                dataLayer.push({"event": "play", "key": s})
+                dataLayer.push({"event": "play_sound", "key": s})
                 break;
             }
         }
@@ -144,7 +144,7 @@ var channel_max = 10;                                        // number of channe
             sound.load()
         }
         sound.play()
-        dataLayer.push({"event": "play", "key": key})
+        dataLayer.push({"event": "play_sound", "key": key})
     }
 
     function is_playing(){
