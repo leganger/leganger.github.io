@@ -1,0 +1,262 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>
+            HOGNES TELLESPILL
+        </title>
+    </head>
+    <style>
+        .center-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 100vh;
+            }
+    </style>
+
+<body>
+
+    <audio id="0" src="audio_short/0.wav" preload="auto"></audio>
+    <audio id="1" src="audio_short/1.wav" preload="auto"></audio>
+    <audio id="2" src="audio_short/2.wav" preload="auto"></audio>
+    <audio id="3" src="audio_short/3.wav" preload="auto"></audio>
+    <audio id="4" src="audio_short/4.wav" preload="auto"></audio>
+    <audio id="5" src="audio_short/5.wav" preload="auto"></audio>
+    <audio id="6" src="audio_short/6.wav" preload="auto"></audio>
+    <audio id="7" src="audio_short/7.wav" preload="auto"></audio>
+    <audio id="8" src="audio_short/8.wav" preload="auto"></audio>
+    <audio id="9" src="audio_short/9.wav" preload="auto"></audio>
+    <audio id="10" src="audio_short/10.wav" preload="auto"></audio>
+    <audio id="11" src="audio_short/11.wav" preload="auto"></audio>
+    <audio id="12" src="audio_short/12.wav" preload="auto"></audio>
+    <audio id="13" src="audio_short/13.wav" preload="auto"></audio>
+    <audio id="14" src="audio_short/14.wav" preload="auto"></audio>
+    <audio id="15" src="audio_short/15.wav" preload="auto"></audio>
+    <audio id="16" src="audio_short/16.wav" preload="auto"></audio>
+    <audio id="17" src="audio_short/17.wav" preload="auto"></audio>
+    <audio id="18" src="audio_short/18.wav" preload="auto"></audio>
+    <audio id="19" src="audio_short/19.wav" preload="auto"></audio>
+    <audio id="20" src="audio_short/20.wav" preload="auto"></audio>
+    <audio id="30" src="audio_short/30.wav" preload="auto"></audio>
+    <audio id="40" src="audio_short/40.wav" preload="auto"></audio>
+    <audio id="50" src="audio_short/50.wav" preload="auto"></audio>
+    <audio id="60" src="audio_short/60.wav" preload="auto"></audio>
+    <audio id="70" src="audio_short/70.wav" preload="auto"></audio>
+    <audio id="80" src="audio_short/80.wav" preload="auto"></audio>
+    <audio id="90" src="audio_short/90.wav" preload="auto"></audio>
+    <audio id="hundre" src="audio_short/hundre.wav" preload="auto"></audio>
+    <audio id="tusen" src="audio_short/tusen.wav" preload="auto"></audio>
+    <audio id="og" src="audio_short/og.wav" preload="auto"></audio>
+    
+
+<div class="center-screen">
+    <span id="text">
+        <span id="number" style="font-size:90vh; font-family:helvetica;">HEI</span>
+    </span>
+</div>
+
+<script type="text/javascript">
+
+const chars = "1234567890";
+const max_chars = 2;
+const num_colors = 100;
+const countdown_time = 2;
+var freeze_countdown;
+
+// Prepare audio channels
+var channel_max = 10;							// number of channels
+audiochannels = new Array();
+for (a=0;a<channel_max;a++) {					// prepare the channels
+    audiochannels[a] = new Array();
+    audiochannels[a]['channel'] = new Audio();	// create a new audio object
+    audiochannels[a]['finished'] = -1;			// expected end time for this channel
+};
+
+window.addEventListener('keydown',this.add_key,false);
+
+function countdown() {
+    count--;
+    if (count < 0) {
+        clearInterval(freeze_countdown);
+        freeze_number();
+    };
+};
+
+function freeze_number() {
+    var sample = Math.floor(Math.random() * num_colors);
+    document.getElementById("number").style.color = rainbow(num_colors, sample);
+
+    // Read the number out loud!
+    play_number(document.getElementById("number").innerHTML);
+};
+
+function play_number(number_str) {
+    switch (number_str.length) {
+        case 1:
+            play_ones(number_str);
+            break;
+        case 2:
+            play_tens(number_str);
+            break;
+        case 3:
+            //play_hundreds(number_str);
+            break;
+        case 4:
+            //play_thousands(number_str);
+            break;
+        default:
+            break;
+    };
+};
+
+function play_sound(s) {
+    for (a=0;a<audiochannels.length;a++) {
+        thistime = new Date();
+        if (audiochannels[a]['finished'] < thistime.getTime()) {			// is this channel finished?
+            audiochannels[a]['finished'] = thistime.getTime() + document.getElementById(s).duration*1000;
+            audiochannels[a]['channel'].src = document.getElementById(s).src;
+            audiochannels[a]['channel'].load();
+            audiochannels[a]['channel'].play();
+            break;
+        };
+    };
+};
+
+function play_ones(number_str) {
+    s = number_str.slice(-1);
+    play_sound(s);
+};
+
+function play_tens(number_str) {
+    s = number_str.slice(-2);
+    if (["10","11","12","13","14","15","16","17","18","19","20","30","40","50","60","70","80","90"].includes(s)) {
+        play_sound(s);
+    } else {
+        s_tens = s.charAt(0).concat("0");
+        play_sound(s_tens);
+        setTimeout(play_ones, document.getElementById(s_tens).duration*1000, s);
+    };
+};
+
+function play_hundreds(number_str) {
+    s = number_str.slice(-3);
+    delay = 0;
+
+    if (s.charAt(0) != "0") {
+        play_sound(s.charAt(0));
+        delay += document.getElementById(s.charAt(0)).duration*1000;
+        setTimeout(play_sound, delay, "hundre");
+        delay += document.getElementById("hundre").duration*1000;
+    }
+
+    if (s.slice(-2) != "00") {
+        setTimeout(play_sound, delay, "og");
+        delay += document.getElementById("og").duration*1000;
+        setTimeout(play_tens, delay, s);
+    };
+};
+
+function play_thousands(number_str) {
+    s = number_str.slice(-4);
+    delay = 0;
+
+    if (s.charAt(0) != "0") {
+        play_sound(s.charAt(0));
+        delay += document.getElementById(s.charAt(0)).duration*1000;
+        setTimeout(play_sound, delay, "tusen");
+        delay += document.getElementById("tusen").duration*1000;
+    }
+
+    if (s.slice(-3) != "000") {
+        setTimeout(play_hundreds, delay, s);
+    };
+};
+
+
+function add_key(e) {   
+    var key = e.key.toUpperCase();
+    if (chars.includes(key)) {
+
+        count = countdown_time;
+        clearInterval(freeze_countdown)
+
+        // Start a new number if the current number is frozen:
+        if (document.getElementById("number").style.color != "black") {
+            document.getElementById("number").innerHTML = key
+            document.getElementById("number").style.color = "black" // New number is black until finished
+
+        // If the current number is not frozen we append the char to the number
+        } else {
+            document.getElementById("number").innerHTML = document.getElementById("number").innerHTML.concat(key);
+        };
+
+        // If the number starts with zero or length of the number is max_length we freeze, otherwise we reset freeze countdown
+        if (document.getElementById("number").innerHTML.length==max_chars) {
+            freeze_number();
+        } else if (document.getElementById("number").innerHTML.charAt(0)=="0") {
+            freeze_number();
+        } else {
+            freeze_countdown = setInterval(countdown, 1000);
+        };
+    };
+};
+
+
+function rainbow(numOfSteps, step) {
+    // This function generates vibrant, "evenly spaced" colours (i.e. no clustering). This is ideal for creating easily distinguishable vibrant markers in Google Maps and other apps.
+    // Adam Cole, 2011-Sept-14
+    // HSV to RBG adapted from: http://mjijackson.com/2008/02/rgb-to-hsl-and-rgb-to-hsv-color-model-conversion-algorithms-in-javascript
+    var r, g, b;
+    var h = step / numOfSteps;
+    var i = ~~(h * 6);
+    var f = h * 6 - i;
+    var q = 1 - f;
+    switch(i % 6){
+        case 0: r = 1; g = f; b = 0; break;
+        case 1: r = q; g = 1; b = 0; break;
+        case 2: r = 0; g = 1; b = f; break;
+        case 3: r = 0; g = q; b = 1; break;
+        case 4: r = f; g = 0; b = 1; break;
+        case 5: r = 1; g = 0; b = q; break;
+    }
+    var c = "#" + ("00" + (~ ~(r * 255)).toString(16)).slice(-2) + ("00" + (~ ~(g * 255)).toString(16)).slice(-2) + ("00" + (~ ~(b * 255)).toString(16)).slice(-2);
+    return (c);
+}
+
+/*
+var channel_max = 10;										// number of channels
+audiochannels = new Array();
+for (a=0;a<channel_max;a++) {									// prepare the channels
+    audiochannels[a] = new Array();
+    audiochannels[a]['channel'] = new Audio();						// create a new audio object
+    audiochannels[a]['finished'] = -1;							// expected end time for this channel
+}
+
+function play_multi_sound(s) {
+    for (a=0;a<audiochannels.length;a++) {
+        thistime = new Date();
+        if (audiochannels[a]['finished'] < thistime.getTime()) {			// is this channel finished?
+            audiochannels[a]['finished'] = thistime.getTime() + document.getElementById(s).duration*1000;
+            audiochannels[a]['channel'].src = document.getElementById(s).src;
+            audiochannels[a]['channel'].load();
+            audiochannels[a]['channel'].play();
+            break;
+        }
+    }
+}
+
+function play_multi_sound_double(s1,s2) {
+    play_multi_sound(s1);
+    setTimeout(play_multi_sound, document.getElementById(s1).duration*1000, s2);
+}
+*/
+
+
+
+
+</script>
+
+</body>
+</html>
